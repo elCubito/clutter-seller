@@ -5,76 +5,77 @@ Każdy etap kończy się działającym buildem, testami i commitem. Kryteria "go
 ## Etap 0 – Szkielet projektu
 - Spring Boot 4.x (Maven), `groupId` `com.clutterseller`, moduły pakietowe zgodnie z CLAUDE.md, Actuator `/actuator/health`
 - `docker-compose.yml` z PostgreSQL dla devu, Flyway z pierwszą migracją
-- `.env.example`, `.gitignore`, README z opisem projektu i uruchomienia
+- `.env.example`, `.gitignore`, `.gitattributes` (LF dla `mvnw` i `*.sh`), README
 - GitHub Actions: `./mvnw verify`
 **Gotowe:** `./mvnw verify` przechodzi lokalnie i w CI, aplikacja startuje z Postgresem z compose.
 
 ## Etap 1 – Przedmioty i zdjęcia (backend)
-- Encja `Item` (statusy jak w CLAUDE.md) + `Photo`, migracje
-- REST: utworzenie przedmiotu z wieloma zdjęciami (multipart) + opcjonalna notatka tekstowa ("rysa na boku", "rozmiar M")
-- Zapis plików na dysku (ścieżka z konfiguracji), miniatury, usunięcie EXIF/GPS, limit rozmiaru, kompresja do rozsądnej rozdzielczości
+- Encja `Item` (statusy jak w CLAUDE.md, flagi/linki per serwis) + `Photo`, migracje
+- REST: utworzenie przedmiotu z wieloma zdjęciami (multipart) + opcjonalna notatka tekstowa
+- Zapis plików na dysku, miniatury, usunięcie EXIF/GPS, limit rozmiaru, kompresja
 - Lista i szczegóły przedmiotów, usuwanie
-**Gotowe:** testy integracyjne (Testcontainers) dla uploadu i listy; zdjęcia po zapisie nie mają GPS.
+**Gotowe:** testy integracyjne (Testcontainers); zdjęcia po zapisie nie mają GPS.
 
-## Etap 2 – Frontend
-- Angular w `frontend/` (Angular CLI, standalone components, signals), proxy `/api` na backend w trybie dev, build przez Mavena (np. frontend-maven-plugin) do static resources Spring Boota; routing Angulara działa po odświeżeniu strony (fallback na `index.html`)
-- Ekran telefonu ("Nowy przedmiot"): przycisk aparatu (`<input type="file" accept="image/*" capture multiple>`), podgląd, notatka, "Wyślij". Cel: maks. 3 dotknięcia od otwarcia do wysłania.
-- Manifest (`ng add @angular/pwa`) + skrót na ekranie głównym telefonu (pełna instalacja PWA wymaga HTTPS; w LAN po HTTP wystarczy skrót, aparat działa)
-- Ekran PC: lista przedmiotów ze statusem, szczegóły
-- Basic Auth na całość
-**Gotowe:** z telefonu w sieci domowej da się dodać przedmiot ze zdjęciami, widać go na PC.
+## Etap 2 – Frontend (Angular)
+- Angular w `frontend/` (Angular CLI, standalone components, signals), proxy `/api` w dev, build przez Mavena do static resources; fallback na `index.html` dla routingu
+- Ekran telefonu ("Nowy przedmiot"): aparat (`<input type="file" accept="image/*" capture multiple>`), podgląd, notatka, "Wyślij" – maks. 3 dotknięcia
+- Manifest (`ng add @angular/pwa`) + skrót na ekranie głównym (pełna PWA wymaga HTTPS)
+- Ekran PC: lista przedmiotów ze statusem, szczegóły; Basic Auth
+**Gotowe:** z telefonu w sieci domowej da się dodać przedmiot, widać go na PC.
 
 ## Etap 3 – Generowanie ogłoszenia przez AI (subskrypcja Claude)
-- Spike: sprawdzić w dokumentacji Claude Code (tryb headless) flagi do wyniku JSON, ograniczenia narzędzi, limitu tur i trybu uprawnień; ręcznie wywołać `claude -p` na katalogu z 2 zdjęciami
-- Port `ListingGenerator` + adapter `claudecode` (`ProcessBuilder`, timeout, katalog roboczy per przedmiot, tylko narzędzia do odczytu)
-- Wejście: zdjęcia + notatka + stałe ustawienia. Wyjście (JSON → rekord): tytuł, opis, marka, model, stan, kolor/rozmiar jeśli dotyczy, słowa kluczowe, rozmiar paczki (S/M/L), frazy do wyszukania ceny
-- Szablony promptów w zasobach, po polsku, z limitami długości tytułu/opisu
-- Kolejka zadań AI (jedno naraz), statusy, obsługa limitu subskrypcji ("spróbuj później"), przycisk "Wygeneruj ponownie"
-**Gotowe:** testy adaptera z fake procesem (poprawny JSON, zły JSON, timeout, limit); ręczny test na 2–3 prawdziwych przedmiotach.
+- Spike: aktualna dokumentacja Claude Code headless (JSON, ograniczenie narzędzi, limit tur, uprawnienia); ręczny test `claude -p` na 2 zdjęciach
+- Port `ListingGenerator` + adapter `claudecode`
+- Wyjście (JSON → rekord): tytuł, opis, marka, model, stan, kolor/rozmiar, słowa kluczowe, rozmiar paczki, **sugerowane ścieżki kategorii OLX i Vinted (tekstowo)**, atrybuty, frazy do wyceny
+- Szablony promptów w zasobach; kolejka zadań (jedno naraz), obsługa limitu, "Wygeneruj ponownie"
+**Gotowe:** testy adaptera z fake procesem; ręczny test na 2–3 przedmiotach.
 
 ## Etap 4 – Wycena
-- Port `PriceResearcher`, ten sam adapter CLI z web search: AI zwraca listę znalezionych ofert {tytuł, cena, stan, źródło, url} z polskich serwisów
-- `PriceStatistics` w Javie: liczba ofert, min, max, średnia, mediana, kwartyle (widełki), odrzucenie outlierów
-- Sugerowana cena (z uzasadnieniem od AI) + 3–5 linków do porównania w UI
-**Gotowe:** testy jednostkowe statystyk (w tym przypadki brzegowe: 0 i 1 oferta).
+- Port `PriceResearcher` (web search przez CLI): lista znalezionych ofert {tytuł, cena, stan, źródło, url}
+- `PriceStatistics` w Javie: liczba, min, max, średnia, mediana, kwartyle, odrzucenie outlierów
+- Sugerowana cena + 3–5 linków w UI
+**Gotowe:** testy jednostkowe statystyk (w tym 0 i 1 oferta).
 
-## Etap 5 – Integracja OLX (Partner API)
-- OAuth2 (authorization code) z OLX przez Spring Security OAuth2 Client, registration id `olx`; zapis i odświeżanie tokenów (szyfrowane)
-- OLX nie przyjmuje `localhost`. Callback URI w developer.olx.pl oparty o publiczną nazwę DNS wskazującą na IP NAS-a w LAN, np. `http://192-168-1-50.nip.io:8088/login/oauth2/code/olx` (nip.io / sslip.io). Musi się zgadzać 1:1 z `redirect-uri` w konfiguracji, a przepływ OAuth trzeba zaczynać z aplikacji otwartej pod tą samą nazwą (ciasteczko sesji + `state`)
-- Plan B, gdyby OLX wymagał HTTPS lub odrzucił nazwę: statyczna strona-przekaźnik na GitHub Pages (https), która przekazuje `code` i `state` do aplikacji w LAN; wtedy własny kontroler callbacku zamiast domyślnego filtra Spring Security
-- Pobranie i cache drzewa kategorii; wybór kategorii (sugestia z API, jeśli jest taki endpoint, w przeciwnym razie AI wybiera z listy kandydatów)
-- Atrybuty kategorii: pobranie wymaganych atrybutów i dozwolonych wartości, AI wypełnia, walidacja
-- Ustawienia Przesyłki OLX (tylko gdzie kategoria/cena/rozmiar pozwala), stała lokalizacja i kontakt
-- Publikacja ogłoszenia + upload zdjęć, zapis ID i URL ogłoszenia
-**Gotowe:** testy z WireMockiem; jedno prawdziwe ogłoszenie opublikowane i ręcznie zweryfikowane.
+## Etap 5 – Ekran przeglądu i API eksportu
+- Ekran "Przejrzyj i zatwierdź": edycja pól, cena z podglądem statystyk, wybór serwisów (OLX / Vinted), status APPROVED
+- Ustawienia: lokalizacja, kontakt, domyślne opcje wysyłki
+- Moduł `export`: lista zatwierdzonych przedmiotów, payload per serwis (limity długości danego serwisu), zdjęcia do pobrania, endpoint "oznacz jako wystawione + link"
+- CORS tylko dla origin rozszerzenia, Basic Auth
+**Gotowe:** testy kontrolerów eksportu (MockMvc); payload dla OLX i Vinted sprawdzony ręcznie.
 
-## Etap 6 – Panel Vinted (kopiuj/wklej)
-- Widok na PC: osobne pola z przyciskiem "Kopiuj" (tytuł, opis, cena, marka, rozmiar, stan, sugerowana ścieżka kategorii Vinted, rozmiar paczki)
-- "Pobierz zdjęcia" (ZIP) do przeciągnięcia do formularza Vinted
-- Checkbox "wystawione na Vinted" + pole na link
-**Gotowe:** wystawienie na Vinted zajmuje ok. minuty.
+## Etap 6 – Rozszerzenie Chrome: szkielet
+- `extension/`: Manifest V3, TypeScript strict, bundler, stały klucz w manifeście (stałe ID)
+- Popup: ustawienia (adres backendu, hasło), lista przedmiotów z API eksportu, wybór przedmiotu i serwisu
+- Pobieranie danych i zdjęć w kontekście rozszerzenia; wstrzyknięcie skryptu na aktywną kartę po kliknięciu; rozpoznanie, czy karta to formularz OLX/Vinted (inaczej komunikat)
+- Build w CI, instrukcja instalacji w README
+**Gotowe:** po kliknięciu na stronie formularza rozszerzenie wypisuje w konsoli odebrany payload; na innej stronie pokazuje komunikat.
 
-## Etap 7 – Ekran przeglądu i ustawienia
-- Jeden ekran "Przejrzyj i wystaw": edycja wszystkich pól, zmiana ceny z podglądem statystyk, wybór platform (OLX / Vinted), przycisk "Wystaw"
-- Ustawienia: lokalizacja, kontakt, domyślne opcje wysyłki, wybór dostawcy/modelu AI
-**Gotowe:** pełny przepływ telefon → PC → OLX + Vinted działa end-to-end.
+## Etap 7 – Wypełnianie formularza OLX
+- Właściciel zapisuje HTML formularza (strona "Dodaj ogłoszenie"), anonimizuje i dodaje jako fixture
+- Adapter `olx`: mapa pól → selektorów w jednym pliku; wypełnianie pól tekstowych i ceny (natywny setter + zdarzenia), zdjęcia przez `DataTransfer`
+- Kategoria i atrybuty: najpierw podpowiedź w panelu, potem w miarę możliwości automatycznie
+- Raport po wypełnieniu: lista pól ✓ / "uzupełnij ręcznie"
+- Rozszerzenie **nie klika** "Dodaj ogłoszenie"; po publikacji użytkownik wkleja link (albo popup proponuje URL aktywnej karty) → "oznacz jako wystawione"
+**Gotowe:** testy na fixture; ręczny test: prawdziwe ogłoszenie wypełnione i opublikowane własnym kliknięciem.
 
-## Etap 8 – Wdrożenie na Synology DS220+
-- NAS: Intel Celeron J4025 (x86-64, 2 rdzenie), 10 GB RAM → obraz `linux/amd64`, budowany w GitHub Actions (nie na NAS-ie)
-- Dockerfile multi-stage: frontend + backend + Claude Code CLI w obrazie runtime, użytkownik nie-root
-- GitHub Actions: build obrazu i push do GHCR jako **prywatny** pakiet (obraz zawiera Claude Code CLI, który nie jest open source – nie redystrybuować go publicznie); alternatywa: instalacja CLI przy starcie kontenera do wolumenu
-- `docker-compose.prod.yml`: app + postgres, wolumeny na zdjęcia i bazę, limity pamięci (np. JVM ~1 GB), restart policy, healthcheck, port wystawiony tylko w LAN
-- Sieć: porty opublikowane przez Dockera omijają zaporę DSM, więc w compose port wiązać do adresu LAN NAS-a (np. `192.168.1.50:8088:8080`), nie do `0.0.0.0`; bez przekierowań na routerze
-- `docs/DEPLOY-SYNOLOGY.md` dla początkującego: instalacja Container Manager, folder na projekt, utworzenie projektu z compose, plik `.env` (w tym token z `claude setup-token`), logowanie do GHCR, aktualizacja obrazu, backup wolumenów (Hyper Backup), opcjonalnie Tailscale
-**Gotowe:** aplikacja działa na NAS-ie, telefon i PC łączą się w sieci domowej, z zewnątrz port jest niedostępny.
+## Etap 8 – Wypełnianie formularza Vinted
+- Analogicznie do etapu 7: fixture, adapter `vinted`, marka/rozmiar/stan/kategoria (podpowiedź lub automat), zdjęcia, raport pól
+**Gotowe:** testy na fixture; ręczny test na prawdziwym ogłoszeniu.
 
-## Etap 9 – Szlif portfolio
-- README: zrzuty ekranu, diagram architektury, decyzje projektowe (ADR w `docs/adr/`, m.in. "AI przez Claude Code headless zamiast API"), uruchomienie w 3 komendach
+## Etap 9 – Wdrożenie na Synology DS220+
+- NAS: Intel Celeron J4025 (x86-64), 10 GB RAM → obraz `linux/amd64`, budowany w GitHub Actions
+- Dockerfile multi-stage: Angular + backend + Claude Code CLI, użytkownik nie-root; obraz w **prywatnym** GHCR (CLI nie jest open source) lub instalacja CLI przy starcie kontenera
+- `docker-compose.prod.yml`: app + postgres, wolumeny, limity pamięci, restart policy, healthcheck; **port wiązany do adresu LAN NAS-a** (np. `192.168.1.50:8088:8080`), bo Docker omija zaporę DSM
+- Stały IP NAS-a (rezerwacja DHCP); adres backendu w ustawieniach rozszerzenia
+- `docs/DEPLOY-SYNOLOGY.md` dla początkującego: Container Manager, projekt z compose, `.env` (token z `claude setup-token`), logowanie do GHCR, aktualizacja, backup (Hyper Backup), opcjonalnie Tailscale
+**Gotowe:** aplikacja działa na NAS-ie; telefon, PC i rozszerzenie łączą się w LAN; z zewnątrz port niedostępny.
+
+## Etap 10 – Szlif portfolio
+- README: zrzuty ekranu, diagram architektury (backend + Angular + rozszerzenie), ADR w `docs/adr/` (m.in. "AI przez Claude Code headless", "rozszerzenie zamiast API serwisów"), uruchomienie w 3 komendach
 - Pokrycie testami kluczowych modułów, badge CI
 
 ## Wersja 2 (później)
-- Zarządzanie ogłoszeniami: status, linki, odświeżanie
-- "Sprzedane na Vinted" → automatyczne zakończenie ogłoszenia na OLX przez API
+- Zarządzanie ogłoszeniami: status, linki, przypomnienia o odświeżeniu
+- "Sprzedane na Vinted" → lista "do zakończenia na OLX" z linkiem (zakończenie ręczne)
 - Kolejni dostawcy AI (Anthropic API przez Spring AI, OpenAI, Gemini, Ollama)
-- Opcjonalnie: HTTPS w LAN (pełna PWA)
-- Opcjonalnie: rozszerzenie przeglądarki, które tylko wypełnia pola formularza Vinted (decyzja właściciela, ryzyko po stronie regulaminu)
+- HTTPS w LAN (pełna PWA)
