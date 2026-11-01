@@ -17,9 +17,9 @@ Każdy etap kończy się działającym buildem, testami i commitem. Kryteria "go
 **Gotowe:** testy integracyjne (Testcontainers) dla uploadu i listy; zdjęcia po zapisie nie mają GPS.
 
 ## Etap 2 – Frontend
-- React + TS + Vite w `frontend/`, budowany przez Mavena do static resources
+- Angular w `frontend/` (Angular CLI, standalone components, signals), proxy `/api` na backend w trybie dev, build przez Mavena (np. frontend-maven-plugin) do static resources Spring Boota; routing Angulara działa po odświeżeniu strony (fallback na `index.html`)
 - Ekran telefonu ("Nowy przedmiot"): przycisk aparatu (`<input type="file" accept="image/*" capture multiple>`), podgląd, notatka, "Wyślij". Cel: maks. 3 dotknięcia od otwarcia do wysłania.
-- Manifest + skrót na ekranie głównym telefonu (pełna instalacja PWA wymaga HTTPS; w LAN po HTTP wystarczy skrót, aparat działa)
+- Manifest (`ng add @angular/pwa`) + skrót na ekranie głównym telefonu (pełna instalacja PWA wymaga HTTPS; w LAN po HTTP wystarczy skrót, aparat działa)
 - Ekran PC: lista przedmiotów ze statusem, szczegóły
 - Basic Auth na całość
 **Gotowe:** z telefonu w sieci domowej da się dodać przedmiot ze zdjęciami, widać go na PC.

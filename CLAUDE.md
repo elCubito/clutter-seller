@@ -10,7 +10,7 @@ Prywatna aplikacja (jeden użytkownik, bez kont) do szybkiego wystawiania używa
    Vinted: brak API dla kont prywatnych, więc tylko panel "kopiuj/wklej" plus paczka zdjęć do pobrania. **Żadnej automatyzacji Vinted** (bez scrapingu, bez botów, bez wysyłania formularzy).
 
 Projekt ma też dwa inne cele:
-- **Nauka**: właściciel ma 16 lat doświadczenia w Javie, ale na wewnętrznych frameworkach. Uczy się Spring Boota, Reacta, Dockera i CI.
+- **Nauka**: właściciel ma 16 lat doświadczenia w Javie, ale na wewnętrznych frameworkach. Uczy się Spring Boota, Angulara, Dockera i CI.
 - **Portfolio**: kod ma być czysty, przetestowany i dobrze udokumentowany. To pierwszy publiczny projekt właściciela.
 
 ## Tryb pracy (WAŻNE)
@@ -27,7 +27,7 @@ Projekt ma też dwa inne cele:
 - Spring Web, Spring Data JPA, Bean Validation, Actuator, Spring Security (Basic Auth)
 - AI v1: Claude Code w trybie headless (`claude -p`, wynik w JSON) wywoływany z Javy jako proces, uwierzytelniony subskrypcją właściciela (`CLAUDE_CODE_OAUTH_TOKEN` z `claude setup-token`). Bez klucza API.
 - PostgreSQL + Flyway; zdjęcia na dysku w wolumenie, w bazie tylko metadane
-- Frontend: React + TypeScript + Vite, budowany do zasobów statycznych serwowanych przez Spring Boot
+- Frontend: Angular (najnowszy stabilny, projekt z Angular CLI), standalone components, signals, nowy control flow (`@if`, `@for`), typowane formularze reaktywne, `HttpClient`; budowany przez Mavena do zasobów statycznych serwowanych przez Spring Boot. Bez NgModules i bez zbędnych bibliotek UI na start.
 - Testy: JUnit 5, AssertJ, Spring Boot Test, Testcontainers (Postgres), WireMock (OLX), fake procesu CLI w testach adaptera AI
 - Docker multi-stage (obraz linux/amd64), docker compose (app + postgres), cel: Synology DS220+ (Container Manager)
 - CI: GitHub Actions (build, testy, obraz do GHCR)
@@ -61,4 +61,4 @@ Zasady:
 - Kod, nazwy, komentarze, commity i README po angielsku. UI i treść ogłoszeń po polsku.
 - Rekordy Javy dla DTO, konstruktorowe wstrzykiwanie zależności, brak Lomboka.
 - Każdy adapter zewnętrzny ma testy (WireMock / fake procesu); logika domenowa ma testy jednostkowe.
-- Komendy: `./mvnw verify` (build + testy), `docker compose up -d` (lokalnie), frontend: `npm run dev` w `frontend/`.
+- Komendy: `./mvnw verify` (build + testy), `docker compose up -d` (lokalnie), frontend: `npm start` (`ng serve` z proxy `/api` na backend) w `frontend/`, testy frontendu przez Angular CLI (`ng test`).
