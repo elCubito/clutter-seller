@@ -1,10 +1,10 @@
 # clutter-seller – plan etapów (docs/PLAN.md)
 
-Każdy etap kończy się działającym buildem, testami i commitem. Kryteria "gotowe" są na końcu etapu.
+Każdy etap kończy się działającym buildem i testami. Po etapie Claude pyta o commit i proponuje komunikat (commit tylko na prośbę, zgodnie z CLAUDE.md). Kryteria "gotowe" są na końcu etapu.
 
 ## Etap 0 – Szkielet projektu
 - Spring Boot 4.x (Maven) **w korzeniu repo**, `groupId` `com.clutterseller`, pakiety modułów zgodnie z CLAUDE.md, Actuator `/actuator/health`
-- `docker-compose.yml` z PostgreSQL dla devu (Spring Boot Docker Compose support tylko jako zależność developerska), Flyway z migracją bazową V1
+- `compose.yaml` z PostgreSQL dla devu (Spring Boot Docker Compose support tylko jako zależność developerska), Flyway z migracją bazową V1
 - `.gitignore` uzupełniony (`.env`, `target/`, `node_modules/`, `dist/`, `.idea/`, `.mcp.json`) i `.idea/` usunięte z indeksu; `.gitattributes` (LF dla `mvnw` i `*.sh`); `mvnw` jako wykonywalny; `.env.example`; README
 - GitHub Actions: `./mvnw verify`
 **Gotowe:** `./mvnw verify` przechodzi lokalnie i w CI, aplikacja startuje z Postgresem z compose.
@@ -77,6 +77,7 @@ Każdy etap kończy się działającym buildem, testami i commitem. Kryteria "go
 ## Etap 10 – Szlif portfolio
 - README: zrzuty ekranu, diagram architektury (backend + Angular + rozszerzenie), ADR w `docs/adr/` (m.in. "AI przez Claude Code headless", "rozszerzenie zamiast API serwisów", "Listing jako osobna encja"), uruchomienie w 3 komendach
 - Pokrycie testami kluczowych modułów, badge CI
+- Opcjonalnie: Spring Modulith – test weryfikujący granice modułów (`ApplicationModules.verify()`) i wygenerowana dokumentacja modułów
 
 ## Wersja 2 (później)
 - Zarządzanie ogłoszeniami: status, linki, przypomnienia o odświeżeniu

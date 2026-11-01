@@ -1,0 +1,8 @@
+# Normalize text files to LF in the repository.
+* text=auto
+
+# Shell scripts must keep LF on checkout, even on Windows (core.autocrlf=true),
+# otherwise they fail on Linux and in CI.
+/mvnw text eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf

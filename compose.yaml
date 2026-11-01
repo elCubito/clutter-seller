@@ -1,0 +1,23 @@
+# Development database. Started automatically by Spring Boot's Docker Compose
+# support on `./mvnw spring-boot:run`, or manually with `docker compose up -d`.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-clutterseller}
+      POSTGRES_USER: ${POSTGRES_USER:-clutterseller}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clutterseller}
+    ports:
+      # Localhost only: the dev database must not be reachable from the LAN.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # Postgres 18+ images keep data in a versioned subdirectory of /var/lib/postgresql.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

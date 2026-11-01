@@ -1,0 +1,2 @@
+-- Baseline migration: intentionally empty.
+-- The first tables (item, photo, listing) arrive in V2 (Stage 1).

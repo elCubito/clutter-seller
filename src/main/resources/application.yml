@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: clutter-seller
+  jpa:
+    # Schema is owned by Flyway; Hibernate only checks that entities match it.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
